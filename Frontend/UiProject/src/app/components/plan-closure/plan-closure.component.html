@@ -1,0 +1,26 @@
+<div class="flex justify-center items-center min-h-screen p-4">
+  <div style="width: 600px; max-width: 90vw;">
+    <p-card styleClass="p-shadow-4 border-2 border-gray-300">
+      <ng-template pTemplate="header">
+        <div class="text-center py-2 border-b-2 border-gray-300">
+          <h2 class="text-3xl font-bold text-gray-800">Close Savings Plan</h2>
+          <hr />
+        </div>
+      </ng-template>
+      <div class="p-mb-3">
+        <label for="bankAccount" class="block mb-2 font-medium">Bank Account for Payout</label>
+        <input pInputText [(ngModel)]="bankAccountNumber" placeholder="Enter bank account number" class="w-full" />
+      </div>
+      <div class="p-mb-3">
+        <p><strong>Payout Amount:</strong> €{{ payoutAmount | number:'1.2-2' }}</p>
+      </div>
+      <div class="flex justify-between gap-2">
+        <p-button pButton label="Cancel" icon="pi pi-times" severity="danger" (click)="cancelClosure()"
+          [disabled]="loading"></p-button>
+
+        <p-button pButton label="Confirm Closure & Payout" icon="pi pi-check-circle" severity="success"
+          (click)="confirmClosure()" [disabled]="!bankAccountNumber || loading"></p-button>
+      </div>
+    </p-card>
+  </div>
+</div>

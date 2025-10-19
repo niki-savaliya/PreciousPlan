@@ -1,0 +1,45 @@
+<!-- Cards Row for Plan Summary -->
+<ng-template #loadingBlock>
+    <p>Loading plan details...</p>
+</ng-template>
+<div *ngIf="kpis; else loadingBlock" class="plan-summary-cards">
+    <p-card class="plan-summary-card bg-blue" pTooltip="Gesamtsumme aller eingezahlten Beträge in Ihren Sparplänen.">
+        <div class="label">Total Deposited</div>
+        <div class="value">€{{ kpis.totalDeposited }}</div>
+    </p-card>
+
+    <p-card class="plan-summary-card bg-green" pTooltip="Aktueller Gesamtwert Ihres Portfolios nach Abzug aller Gebühren.">
+        <div class="label">Portfolio Value</div>
+        <div class="value">€{{ kpis.portfolioValue }}</div>
+    </p-card>
+
+    <p-card class="plan-summary-card bg-purple" pTooltip="Ihr Nettoertrag oder Verlust basierend auf dem aktuellen Portfoliowert im Vergleich zu den Einzahlungen.">
+        <div class="label">Portfolio Loss</div>
+        <div class="value">€{{ kpis.profitLoss }}</div>
+    </p-card>
+
+    <p-card class="plan-summary-card bg-red" pTooltip="Gesamtanzahl der vollständig gekauften Metallbarren (Gold und Silber).">
+        <div class="label">Purchased Bars</div>
+        <div class="value">{{ kpis.fullyPurchasedBars }}</div>
+    </p-card>
+
+    <p-card class="plan-summary-card bg-blue" pTooltip="Anzahl der Gold-Einheiten (Barren oder Münzen) in Ihrem Portfolio.">
+        <div class="label">Total Gold Units</div>
+        <div class="value">{{ kpis.totalGoldUnits }}</div>
+    </p-card>
+
+        <p-card class="plan-summary-card bg-green" pTooltip="Anzahl der Silber-Einheiten (Barren oder Münzen) in Ihrem Portfolio.">
+        <div class="label">Total Silver Units</div>
+        <div class="value">{{ kpis.totalSilverUnits }}</div>
+    </p-card>
+
+    <p-card class="plan-summary-card bg-purple" pTooltip="Summe aller Quartalsgebühren, die für Ihre Sparpläne gezahlt wurden.">
+        <div class="label">Quarterly Fees Paid</div>
+        <div class="value">€{{ kpis.quarterlyFeesPaid }}</div>
+    </p-card>
+
+    <p-card class="plan-summary-card bg-red" pTooltip="Anzahl der aktuell aktiven Sparpläne in Ihrem Konto.">
+        <div class="label">Active Plans Count</div>
+        <div class="value">{{ kpis.activePlansCount }}</div>
+    </p-card>
+</div>

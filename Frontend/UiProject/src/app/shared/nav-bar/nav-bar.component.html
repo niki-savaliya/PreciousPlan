@@ -1,0 +1,23 @@
+<!-- src/app/shared/nav-bar/nav-bar.component.html -->
+<nav class="nav-container">
+  <p-button *ngIf="auth.isLoggedIn()" routerLink="/dashboard" label="Dashboard" class="p-button-text" [routerLinkActive]="'active'" icon="pi pi-objects-column">
+  </p-button>
+
+  <p-button *ngIf="auth.isLoggedIn()" routerLink="/saving-plans" label="My Savings Plans" class="p-button-text" [routerLinkActive]="'active'" icon="pi pi-wallet">
+  </p-button>
+
+  <p-button *ngIf="auth.isLoggedIn()" routerLink="/transactions" label="Transactions" class="p-button-text" [routerLinkActive]="'active'" icon="pi pi-money-bill">
+  </p-button>
+
+  <!-- <p-button *ngIf="auth.isLoggedIn()" routerLink="/summary" label="Summary" class="p-button-text" [routerLinkActive]="'active'" icon="pi pi-book">
+  </p-button>  -->
+
+  <p-button *ngIf="auth.isLoggedIn()" routerLink="/profile" label="Profile" class="p-button-text" icon="pi pi-user"
+    [routerLinkActive]="'active'">
+  </p-button>
+
+  <span class="nav-spacer"></span>
+
+  <p-button *ngIf="auth.isLoggedIn()" label="Logout" severity="info" icon="pi pi-sign-out" (click)="onLogout()">
+  </p-button>
+</nav>

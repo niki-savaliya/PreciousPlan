@@ -1,0 +1,38 @@
+.plan-summary-cards {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.plan-summary-card {
+  flex: 1 1 calc(25% - 1rem); /* 4 cards side by side with gaps */
+  min-width: 180px;
+  padding: 1.2rem;
+  color: white;
+  text-align: center;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
+}
+
+.label {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  margin-bottom: 0.5rem;
+}
+
+.value {
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+p-tabs{
+    margin-bottom: 1rem;
+}
+
+/* Background colors */
+.bg-blue   { background-color: #007ad9; }
+.bg-green  { background-color: #28a745; }
+.bg-purple { background-color: #6f42c1; }
+.bg-red    { background-color: #dc3545; }

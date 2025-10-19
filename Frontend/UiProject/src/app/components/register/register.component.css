@@ -1,0 +1,18 @@
+.two-column-table {
+  width: 100%;
+  border-collapse: separate !important;
+  border-spacing: 0 1rem !important;
+}
+
+.label-cell {
+  width: 40%;
+  vertical-align: middle;
+  font-weight: 600;
+  padding-right: 1rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.input-cell {
+  width: 60%;
+}
