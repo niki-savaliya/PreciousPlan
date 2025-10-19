@@ -1,0 +1,237 @@
+<div class="p-4">
+  <!-- Header Section -->
+  <div class="mb-4">
+    <p-card styleClass="border-2 border-gray-300">
+      <ng-template pTemplate="header">
+        <div class="text-center py-2 bg-gray-50 border-b-2 border-gray-300">
+          <h2 class="text-3xl font-bold text-gray-800 m-0">Precious Metals Investment Simulation</h2>
+        </div>
+      </ng-template>
+      <p class="text-center text-gray-600">
+        Analyze historical performance and simulate savings plans for gold and silver investments
+      </p>
+    </p-card>
+  </div>
+
+  <!-- Current Price & Simulation Controls Row -->
+  <div class="grid gap-4 mb-4 p-2" style="grid-auto-rows: auto;">
+    <!-- Current Metal Price -->
+    <div style="width: 49%;">
+      <p-card styleClass="border-2 border-gray-300" [style]="{'height': '100%'}">
+        <!-- Card header and content unchanged -->
+        <ng-template pTemplate="header">
+          <div class="py-3 px-4 bg-gray-50 border-b-2 border-gray-300">
+            <h4 class="text-xl font-bold text-gray-800 m-0">
+              <i class="pi pi-euro mr-2"></i>
+              Current Rate
+            </h4>
+          </div>
+        </ng-template>
+        <div class="p-4">
+          <div class="chart-container" style="width: 100%; height: fit-content;">
+            <p-chart type="bar" [data]="latestChartData" [options]="latestChartOptions" styleClass="w-full"></p-chart>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Simulation Settings -->
+    <div style="width: 49%;">
+      <p-card styleClass="border-2 border-gray-300" [style]="{'height': '100%', width: '100%'}">
+        <ng-template pTemplate="header">
+          <div class="py-3 px-4 bg-gray-50 border-b-2 border-gray-300">
+            <h4 class="text-xl font-bold text-gray-800 m-0">
+              <i class="pi pi-cog mr-2"></i>
+              Simulation Settings
+            </h4>
+          </div>
+        </ng-template>
+
+        <form (ngSubmit)="onSimulationUpdate()" class="p-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="mb-4">
+              <label for="selectedMetal" class="block mb-2 font-medium">Metal Type</label>
+              <select id="selectedMetal" [(ngModel)]="selectedMetal" name="selectedMetal"
+                class="w-full p-inputtext p-component" style="width: 100%;">
+                <option *ngFor="let metal of availableMetals" [value]="metal.code">
+                  {{metal.name}}
+                </option>
+              </select>
+            </div>
+
+            <div class="mb-4">
+              <label for="monthlySavings" class="block mb-2 font-medium">Monthly Savings (EUR)</label>
+              <input pInputText id="monthlySavings" type="number" [(ngModel)]="monthlySavings" name="monthlySavings"
+                min="10" max="10000" class="w-full" style="width: 100%;">
+            </div>
+
+            <div class="mb-4">
+              <label for="startDate" class="block mb-2 font-medium">Start Date</label>
+              <input pInputText id="startDate" type="date" [(ngModel)]="startDate" name="startDate" min="2000-01-01"
+                max="{{ maxDate }}" class="w-full" style="width: 100%;">
+            </div>
+
+            <div class="mb-4">
+              <label for="endDate" class="block mb-2 font-medium">End Date</label>
+              <input pInputText id="endDate" type="date" [(ngModel)]="endDate" name="endDate" min="2000-01-02"
+                max="{{ maxDate }}" class="w-full" style="width: 100%;">
+            </div>
+
+          </div>
+
+          <div class="text-center mt-4">
+            <p-button type="submit" label="Run Simulation" icon="pi pi-play" severity="success"
+              styleClass="w-full md:w-auto">
+            </p-button>
+          </div>
+        </form>
+      </p-card>
+    </div>
+  </div>
+
+  <!-- Investment Summary -->
+  <div class="mb-4" *ngIf="simulationData.profitLoss">
+    <p-card styleClass="border-2 border-gray-300">
+      <ng-template pTemplate="header">
+        <div class="py-3 px-4 bg-gray-50 border-b-2 border-gray-300">
+          <h4 class="text-xl font-bold text-gray-800 m-0">
+            <i class="pi pi-info-circle mr-2"></i>
+            Investment Summary
+          </h4>
+        </div>
+      </ng-template>
+
+      <div class="p-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+          <div class="text-center p-4 bg-gray-50 rounded"
+            pTooltip="Gesamtsumme aller Sparraten, die Sie in den gewählten Jahren eingezahlt haben.">
+            <div class="text-2xl font-bold text-green-600">
+              €{{ getTotalDeposits() }}
+            </div>
+            <div class="text-gray-600 mt-2">Total Deposits</div>
+          </div>
+
+          <div class="text-center p-4 bg-gray-50 rounded"
+            pTooltip="Aktueller Wert Ihres Portfolios basierend auf den neuesten Metallpreisen.">
+            <div class="text-2xl font-bold text-orange-600">
+              €{{ getLatestPortfolioValue() }}
+            </div>
+            <div class="text-gray-600 mt-2">Current Value</div>
+          </div>
+
+          <div class="text-center p-4 bg-gray-50 rounded"
+            pTooltip="Ihre bisherige Gesamtperformance; die Differenz zwischen aktuellem Wert und eingezahltem Kapital.">
+            <div class="text-2xl font-bold" [class.text-green-600]="getLatestProfitValue() >= 0"
+              [class.text-red-600]="getLatestProfitValue() < 0">
+              €{{ getLatestProfit() }}
+            </div>
+            <div class="text-gray-600 mt-2">Total Profit/Loss</div>
+          </div>
+
+          <div class="text-center p-4 bg-gray-50 rounded"
+            pTooltip="Prozentuale Rendite auf Ihre Einzahlungen im beobachteten Zeitraum.">
+            <div class="text-2xl font-bold" [class.text-green-600]="getReturnPercentageValue() >= 0"
+              [class.text-red-600]="getReturnPercentageValue() < 0">
+              {{ getReturnPercentage() }}%
+            </div>
+            <div class="text-gray-600 mt-2">Return Rate</div>
+          </div>
+
+        </div>
+      </div>
+
+    </p-card>
+  </div>
+
+  <!-- Simulation Results Section -->
+  <div *ngIf="simulationData.deposits">
+    <div class="mb-4">
+      <p-card styleClass="border-2 border-gray-300">
+        <div class="text-center py-3">
+          <h3 class="text-2xl font-bold text-gray-800 m-0">
+            <i class="pi pi-chart-line mr-2"></i>
+            Simulation Results
+          </h3>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 p-2">
+      <!-- Cumulative Deposits -->
+      <div style="width: 32%;">
+        <p-card styleClass="border-2 border-gray-300 h-full">
+          <ng-template pTemplate="header">
+            <div class="py-3 px-4 bg-gray-50 border-b-2 border-gray-300">
+              <h5 class="text-lg font-bold text-gray-800 m-0" pTooltip="Zeigt die Gesamtbeträge, die durch regelmäßige monatliche Einzahlungen im Laufe der Zeit gespart werden können.">
+                <i class="pi pi-wallet mr-2 text-green-600"></i>
+                Cumulative Deposits
+              </h5>
+            </div>
+          </ng-template>
+
+          <div style="height: fit-content;">
+            <p-chart type="line" [data]="simulationData.deposits" [options]="simulationOptions"
+              styleClass="h-full"></p-chart>
+          </div>
+
+          <ng-template pTemplate="footer">
+            <p class="text-center text-gray-600 py-2">
+              Total amount saved over time through monthly deposits
+            </p>
+          </ng-template>
+        </p-card>
+      </div>
+
+      <!-- Portfolio Value -->
+      <div style="width: 32%;">
+        <p-card styleClass="border-2 border-gray-300 h-full">
+          <ng-template pTemplate="header">
+            <div class="py-3 px-4 bg-gray-50 border-b-2 border-gray-300">
+              <h5 class="text-lg font-bold text-gray-800 m-0" pTooltip="Stellt den Wert des Portfolios im Vergleich zu den geleisteten Einzahlungen basierend auf historischen Metallpreisen dar.">
+                <i class="pi pi-trending-up mr-2 text-orange-600"></i>
+                Portfolio Value Development
+              </h5>
+            </div>
+          </ng-template>
+
+          <div style="height: fit-content;">
+            <p-chart type="line" [data]="simulationData.portfolio" [options]="simulationOptions"
+              styleClass="h-full"></p-chart>
+          </div>
+
+          <ng-template pTemplate="footer">
+            <p class="text-center text-gray-600 py-2">
+              Portfolio value vs deposits based on historical metal prices
+            </p>
+          </ng-template>
+        </p-card>
+      </div>
+
+      <!-- Profit/Loss -->
+      <div style="width: 32%;">
+        <p-card styleClass="border-2 border-gray-300 h-full" *ngIf="simulationData.profitLoss">
+          <ng-template pTemplate="header">
+            <div class="py-3 px-4 bg-gray-50 border-b-2 border-gray-300">
+              <h5 class="text-lg font-bold text-gray-800 m-0" pTooltip="Zeigt den Nettoertrag oder -verlust im Vergleich zu den insgesamt eingezahlten Beträgen über den gewählten Zeitraum.">
+                <i class="pi pi-chart-bar mr-2 text-blue-600"></i>
+                Profit/Loss Curve
+              </h5>
+            </div>
+          </ng-template>
+
+          <div style="height: fit-content">
+            <p-chart type="line" [data]="simulationData.profitLoss" [options]="simulationOptions"
+              styleClass="h-full"></p-chart>
+          </div>
+
+          <ng-template pTemplate="footer">
+            <p class="text-center text-gray-600 py-2">
+              Net profit or loss compared to total deposits
+            </p>
+          </ng-template>
+        </p-card>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,55 @@
+<div class="w-full">
+  <app-kpi-summary></app-kpi-summary>
+  <div class="flex justify-content-center min-h-screen mt-4 bg-gray-100">
+    <div style="width: 800px; max-width: 90vw;">
+      <p-card styleClass="p-shadow-4 border-2 border-gray-300">
+        <ng-template pTemplate="header">
+          <div class="text-center py-2 border-b-2 border-gray-300">
+            <h2 class="text-3xl font-bold text-gray-800">My Savings Plans</h2>
+            <hr class="my-1" />
+          </div>
+        </ng-template>
+        <button pButton label="Create New Plan" icon="pi pi-plus" class="p-button-success w-full mb-1"
+          (click)="addNewPlan()"></button>
+
+        <p-table [value]="plans" [loading]="loading" [paginator]="true" [rows]="10" responsiveLayout="scroll"
+          class="mt-3">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Plan Type</th>
+              <th>Monthly Amount</th>
+              <th>Start Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-plan>
+            <tr>
+              <td>
+                <!-- <i [class]="plan.planType === 1 ? 'pi pi-star' : 'pi pi-circle'" class="p-mr-2"></i> -->
+                {{ plan.planType === 1 ? 'Goldbarren 1 Feinunze' : plan.planType === 2 ? 'Silberbarren 1.000 Gramm' : ''
+                }}
+              </td>
+              <td>€{{plan.monthlyAmount | number:'1.2-2'}}</td>
+              <td>{{plan.startDate | date:'dd.MM.yyyy'}}</td>
+              <td>
+                <p-tag [value]="getStatusLabel(plan.isActive)" [severity]="getSeverity(plan.isActive)"></p-tag>
+              </td>
+              <td>
+                <button pButton icon="pi pi-eye" class="p-button-rounded p-button-text"
+                  (click)="viewPlanDetails(plan.id)" pTooltip="View Details"></button>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="5" class="p-text-center">
+                No savings plans found. Create your first plan!
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+  </div>
+</div>

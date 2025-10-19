@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  backend-service:
+    build:
+      context: Backend/MetalSavingsManager
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      # Configure your connection string to point to the mounted volume
+      - ConnectionStrings__DefaultConnection=Data Source=/app/MetalSavingsManager.db
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_DETAILEDERRORS=true
+      - Logging__LogLevel__Default=Debug
+
+    restart: unless-stopped
+    networks:
+      - docker-network
+    volumes:
+      - sqlite_data:/app
+
+  frontend-service:
+    build:
+      context: Frontend/UiProject
+      dockerfile: Dockerfile
+    ports:
+      - "4200:4200"
+    networks:
+      - docker-network
+    restart: unless-stopped
+
+volumes:
+  # Persistent sqlite data for the MetalsavingsManager service
+  sqlite_data:
+    driver: local
+
+networks:
+  docker-network:
+    driver: bridge

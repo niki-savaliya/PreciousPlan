@@ -1,0 +1,124 @@
+<div class="flex justify-center items-center min-h-screen p-4">
+  <div style="width: 600px; max-width: 90vw;">
+    <p-card styleClass="p-shadow-4 border-2 border-gray-300">
+      <ng-template pTemplate="header">
+        <div class="text-center border-b-2">
+          <h2 class="text-center font-bold">Register</h2>
+          <hr />
+        </div>
+      </ng-template>
+      <form #registerForm="ngForm"
+            (ngSubmit)="onRegister()"
+            autocomplete="off"
+            class="p-2">
+        <div class="mb-4">
+          <label for="name" class="block mb-2 font-medium">Name</label>
+          <input id="name" 
+                 name="name" 
+                 pInputText 
+                 [(ngModel)]="name" 
+                 #nameRef="ngModel" 
+                 required 
+                 class="w-full" />
+          <small class="text-red-600 block mt-1" *ngIf="nameRef.invalid && (nameRef.dirty || nameRef.touched)">
+            Name is required
+          </small>
+        </div>
+        
+        <div class="mb-4">
+          <label for="email" class="block mb-2 font-medium">Email</label>
+          <input id="email" 
+                 name="email" 
+                 type="email" 
+                 pInputText 
+                 [(ngModel)]="email" 
+                 #emailRef="ngModel" 
+                 required 
+                 class="w-full" />
+          <small class="text-red-600 block mt-1" *ngIf="emailRef.invalid && (emailRef.dirty || emailRef.touched)">
+            Email is required
+          </small>
+        </div>
+        
+        <div class="mb-4">
+          <label for="bankAccountNumber" class="block mb-2 font-medium">Bank Account Number</label>
+          <input id="bankAccountNumber" 
+                 name="bankAccountNumber" 
+                 pInputText 
+                 [(ngModel)]="bankAccountNumber" 
+                 #bankAccountRef="ngModel" 
+                 required 
+                 class="w-full" />
+          <small class="text-red-600 block mt-1" *ngIf="bankAccountRef.invalid && (bankAccountRef.dirty || bankAccountRef.touched)">
+            Bank Account Number is required
+          </small>
+        </div>
+        
+        <div class="mb-4">
+          <label for="password" class="block mb-2 font-medium">Password</label>
+          <p-password id="password" 
+                      name="password" 
+                      [(ngModel)]="password" 
+                      #passwordRef="ngModel" 
+                      required 
+                      class="w-full"
+                      [feedback]="true"
+                      [inputStyle]="{'width': '100%'}"></p-password>
+          <small class="text-red-600 block mt-1" *ngIf="passwordRef.invalid && (passwordRef.dirty || passwordRef.touched)">
+            Password is required
+          </small>
+        </div>
+        
+        <div class="mb-4">
+          <label for="confirmPassword" class="block mb-2 font-medium">Confirm Password</label>
+          <p-password id="confirmPassword" 
+                      name="confirmPassword" 
+                      [(ngModel)]="confirmPassword" 
+                      #confirmPasswordRef="ngModel" 
+                      required
+                      class="w-full"
+                      [inputStyle]="{'width': '100%'}"></p-password>
+          <small class="text-red-600 block mt-1" *ngIf="confirmPasswordRef.invalid && (confirmPasswordRef.dirty || confirmPasswordRef.touched)">
+            Confirm Password is required
+          </small>
+        </div>
+        
+        <div class="mb-4">
+          <label for="role" class="block mb-2 font-medium">Role</label>
+          <select id="role" 
+                  name="role" 
+                  [(ngModel)]="role" 
+                  #roleRef="ngModel" 
+                  required 
+                  class="w-full p-inputtext p-component">
+            <option value="User">User</option>
+            <option value="Admin">Admin</option>
+          </select>
+          <small class="text-red-600 block mt-1" *ngIf="roleRef.invalid && (roleRef.dirty || roleRef.touched)">
+            Role is required
+          </small>
+        </div>
+        
+        <div *ngIf="errorMessage" class="text-red-600 text-center mb-4">{{ errorMessage }}</div>
+        <div *ngIf="successMessage" class="text-center mb-4" style="color:#FFCDA2;">{{ successMessage }}</div>
+        
+        <div class="mb-3">
+          <p-button label="Register" 
+                    icon="pi pi-user-plus" 
+                    type="submit" 
+                    severity="success"
+                    [disabled]="registerForm.invalid" 
+                    styleClass="w-full"></p-button>
+        </div>
+        
+        <p-divider align="center"><b>OR</b></p-divider>
+        
+        <p-button label="Back to Login" 
+                  icon="pi pi-arrow-left" 
+                  severity="info" 
+                  (click)="onBackToLogin()" 
+                  styleClass="w-full"></p-button>
+      </form>
+    </p-card>
+  </div>
+</div>

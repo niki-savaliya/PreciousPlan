@@ -1,0 +1,67 @@
+<div class="flex justify-center items-center min-h-screen p-4">
+  <div style="width: 600px; max-width: 90vw;">
+    <p-card styleClass="p-shadow-4 border-2 border-gray-300">
+      <ng-template pTemplate="header">
+        <div class="text-center py-4 border-b-2 border-gray-300">
+          <h2 class="text-3xl font-bold text-gray-800">User Profile</h2>
+          <hr />
+        </div>
+      </ng-template>
+      
+      <div class="p-2">
+        <div class="mb-4">
+          <label for="name" class="block mb-2 font-medium">Name</label>
+          <input 
+            pInputText 
+            id="name" 
+            [(ngModel)]="user.name" 
+            [disabled]="!isEditing"
+            class="w-full"
+          />
+        </div>
+
+        <div class="mb-4">
+          <label for="email" class="block mb-2 font-medium">Email</label>
+          <input 
+            pInputText 
+            id="email" 
+            type="email"
+            [(ngModel)]="user.email" 
+            [disabled]="!isEditing"
+            class="w-full"
+          />
+        </div>
+
+        <div class="mb-4">
+          <label for="bankAccount" class="block mb-2 font-medium">Bank Account Number</label>
+          <input 
+            pInputText 
+            id="bankAccount" 
+            [(ngModel)]="user.bankAccountNumber" 
+            [disabled]="!isEditing"
+            class="w-full"
+          />
+        </div>
+
+        <div class="flex justify-between gap-3 mt-6">
+          <p-button 
+            [label]="isEditing ? 'Cancel' : 'Edit'" 
+            [icon]="isEditing ? 'pi pi-times' : 'pi pi-pencil'"
+            [severity]="isEditing ? 'secondary' : 'info'"
+            (click)="toggleEdit()"
+            [disabled]="loading"
+          ></p-button>
+
+          <p-button 
+            label="Save Changes" 
+            icon="pi pi-check"
+            severity="success"
+            (click)="saveProfile()"
+            [disabled]="!isEditing || loading"
+            *ngIf="isEditing"
+          ></p-button>
+        </div>
+      </div>
+    </p-card>
+  </div>
+</div>

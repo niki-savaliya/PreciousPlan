@@ -1,0 +1,96 @@
+<div class="flex justify-center items-center min-h-screen p-4">
+  <div style="width: 800px; max-width: 90vw;">
+    <p-card styleClass="p-shadow-4 border-2 border-gray-300">
+      <ng-template pTemplate="header">
+        <div class="text-center py-2 border-b-2 border-gray-300">
+          <h2 class="text-3xl font-bold text-gray-800">Savings Plan Details</h2>
+          <hr class="my-1" />
+        </div>
+      </ng-template>
+
+      <!-- Cards Row for Plan Summary -->
+      <div *ngIf="plan; else loadingBlock" class="plan-summary-cards">
+        <p-card class="plan-summary-card bg-blue">
+          <div class="label">Plan Type</div>
+          <div class="value">{{ plan.planType === "1" ? "Goldbarren 1 Feinunze" : "Silberbarren 1.000 Gramm" }}</div>
+        </p-card>
+
+        <p-card class="plan-summary-card bg-green">
+          <div class="label">Monthly Amount</div>
+          <div class="value">€{{ plan.monthlyAmount }}</div>
+        </p-card>
+
+        <p-card class="plan-summary-card bg-purple">
+          <div class="label">Start Date</div>
+          <div class="value">{{ plan.startDate | date:'dd.MM.yyyy' }}</div>
+        </p-card>
+
+        <p-card class="plan-summary-card bg-red">
+          <div class="label">Status</div>
+          <p-tag [value]="plan.isActive ? 'Active' : 'Closed'"
+            [severity]="plan.isActive ? 'success' : 'danger'"></p-tag>
+        </p-card>
+      </div>
+
+      <ng-template #loadingBlock>
+        <p>Loading plan details...</p>
+      </ng-template>
+
+      <!-- Tabs and Tables remain the same -->
+      <p-tabs>
+        <p-tabpanel header="Deposits" leftIcon="pi pi-wallet">
+          <p-table [value]="deposits" [loading]="loading" responsiveLayout="scroll">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-deposit>
+              <tr>
+                <td>{{deposit.depositDate | date:'dd.MM.yyyy'}}</td>
+                <td>€{{deposit.amount | number:'1.2-2'}}</td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="2" class="p-text-center">No deposits.</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-tabpanel>
+
+        <p-tabpanel header="Quarterly Fees" leftIcon="pi pi-money-bill">
+          <p-table [value]="fees" [loading]="loading" responsiveLayout="scroll">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Fee Date</th>
+                <th>Amount</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-fee>
+              <tr>
+                <td>{{fee.feeDate | date:'dd.MM.yyyy'}}</td>
+                <td>€{{fee.feeAmount | number:'1.2-2'}}</td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="2" class="p-text-center">No fees found.</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-tabpanel>
+      </p-tabs>
+
+      <div class="p-text-center p-m-4" style="display: flex; gap: 0.5rem;">
+        <div *ngIf="plan?.isActive">
+          <p-button label="Close Plan" icon="pi pi-times-circle" [raised]="true" severity="danger"
+            (click)="closePlan()"></p-button>
+        </div>
+        <p-button label="Back to Plans" icon="pi pi-arrow-left" severity="info" (click)="backToPlans()"></p-button>
+      </div>
+
+    </p-card>
+  </div>
+</div>

@@ -1,0 +1,43 @@
+<div class="flex justify-center items-center min-h-screen p-4">
+  <div style="width: 600px; max-width: 90vw;">
+    <p-card styleClass="p-shadow-4 border-2 border-gray-300">
+      <ng-template pTemplate="header">
+        <div class="text-center py-4border-b-2 border-gray-300">
+          <h2 class="text-3xl font-bold text-gray-800">Login</h2>
+          <hr />
+        </div>
+      </ng-template>
+      <form #loginForm="ngForm" (ngSubmit)="onLogin()" class="p-4">
+        <div class="mb-4">
+          <label for="username" class="block mb-2 font-medium">Username</label>
+          <input id="username" name="username" pInputText [(ngModel)]="username" #usernameRef="ngModel" required
+            class="w-full" />
+          <small class="text-red-600 block mt-1"
+            *ngIf="usernameRef.invalid && (usernameRef.dirty || usernameRef.touched)">
+            Username is required
+          </small>
+        </div>
+
+        <div class="mb-4">
+          <label for="password" class="block mb-2 font-medium">Password</label>
+          <p-password id="password" name="password" [(ngModel)]="password" #passwordRef="ngModel" required
+            class="w-full" [inputStyle]="{'width': '100%'}"></p-password>
+          <small class="text-red-600 block mt-1"
+            *ngIf="passwordRef.invalid && (passwordRef.dirty || passwordRef.touched)">
+            Password is required
+          </small>
+        </div>
+
+        <div class="mb-3">
+          <p-button label="Login" icon="pi pi-user" type="submit" [disabled]="loginForm.invalid"
+          severity="success" styleClass="w-full"></p-button>
+        </div>
+
+        <p-divider align="center"><b>OR</b></p-divider>
+
+        <p-button label="Create Account" icon="pi pi-user-plus" (click)="onRegister()"
+          styleClass="w-full"></p-button>
+      </form>
+    </p-card>
+  </div>
+</div>

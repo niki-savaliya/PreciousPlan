@@ -1,0 +1,47 @@
+# .NET backend
+
+# Build outputs
+/bin/
+/obj/
+*.exe
+*.dll
+*.pdb
+*.cache
+*.config
+*.bak
+/publish/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio files
+.vs/
+
+# Rider IDE
+.idea/
+
+# Local DB and runtime artifacts
+MetalSavingsManager.db
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# Environment & config files that may contain secrets
+appsettings.Development.json
+appsettings.Local.json
+.env
+
+# Docker overrides if any
+docker-compose.override.yml
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs, temp files
+*.log
+*.tmp

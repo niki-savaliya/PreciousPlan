@@ -1,0 +1,23 @@
+/* src/app/shared/nav-bar/nav-bar.component.css */
+.nav-container {
+  display: flex;
+  align-items: center;
+  background-color: var(--surface-b);
+  padding: 0.5rem 1rem;
+}
+
+.nav-spacer {
+  flex: 1;
+}
+
+:host ::ng-deep .p-button-text {
+  background: none;
+  border: none;
+  color: var(--text-color-on-surface);
+  margin-right: 1rem;
+}
+
+:host ::ng-deep .p-button-text.active .p-button-label,
+:host ::ng-deep .p-button-text:hover .p-button-label {
+  color: var(--primary-color);
+}

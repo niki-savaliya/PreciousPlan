@@ -1,0 +1,39 @@
+<div class="flex justify-center items-center min-h-screen p-4">
+  <div style="width: 600px; max-width: 90vw;">
+    <p-card styleClass="p-shadow-4 border-2 border-gray-300">
+      <ng-template pTemplate="header">
+        <div class="text-center py-4 border-b-2 border-gray-300">
+          <h2 class="text-3xl font-bold text-gray-800">Add New Savings Plan</h2>
+          <hr />
+        </div>
+      </ng-template>
+      <form (ngSubmit)="savePlan()" #planForm="ngForm" class="p-fluid">
+
+        <div class="mb-2">
+          <label for="planType" class="block mb-2 font-medium">Plan Type</label>
+          <select pInputText id="planType" [(ngModel)]="formModel.planType" name="planType" class="w-full" required="">
+            <option [value]="1">Goldbarren 1 Feinunze</option>
+            <option [value]="2">Silberbarren 1.000 Gramm</option>
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label for="monthlyAmount" class="block mb-2 font-medium">Monthly Amount (€)</label>
+          <input pInputText type="number" id="monthlyAmount" name="monthlyAmount" [(ngModel)]="formModel.monthlyAmount"
+            required min="1" #amountCtrl="ngModel" class="w-full" />
+
+          <small *ngIf="amountCtrl.invalid && (amountCtrl.dirty || amountCtrl.touched)" class="p-error">
+            Please enter an amount greater than 0.
+          </small>
+
+        </div>
+
+        <div class="p-mt-3">
+          <p-button label="Add Plan" icon="pi pi-check" severity="success" type="submit"
+            [disabled]="planForm.invalid || formModel.monthlyAmount <= 0"></p-button>
+          <p-button label="Cancel" icon="pi pi-times" severity="danger" (click)="cancel()" class="ml-2"></p-button>
+        </div>
+      </form>
+    </p-card>
+  </div>
+</div>

@@ -1,0 +1,32 @@
+/* .dashboard-container {
+  max-width: 480px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #222;
+  color: #f8f8f8;
+  border-radius: 16px;
+  box-shadow: 0 6px 24px #0007;
+}
+.logout-btn:hover {
+  background: #c53a3a;
+}
+.dashboard-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.dashboard-options button {
+  padding: 1rem 0;
+  background: #FFCDA2;
+  color: #222;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.18s;
+}
+.dashboard-options button:hover {
+  background: #36c982;
+} */

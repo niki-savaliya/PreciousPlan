@@ -1,0 +1,33 @@
+<div class="flex justify-center items-center min-h-screen p-4">
+  <div style="width: 600px; max-width: 90vw;">
+    <p-card styleClass="p-shadow-4 border-2 border-gray-300">
+      <ng-template pTemplate="header">
+        <div class="text-center py-4 border-b-2 border-gray-300">
+          <h2 class="text-3xl font-bold text-gray-800">Transactions</h2>
+          <hr />
+        </div>
+      </ng-template>
+      <p-table [value]="transactions" [loading]="loading" responsiveLayout="scroll">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Amount (EUR)</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-tx>
+          <tr>
+            <td>{{ tx.transactionDate | date:'dd.MM.yyyy' }}</td>
+            <td>{{ tx.transactionType }}</td>
+            <td>€{{ tx.amount | number:'1.2-2' }}</td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="3" class="p-text-center">No transactions found.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+  </div>
+</div>
