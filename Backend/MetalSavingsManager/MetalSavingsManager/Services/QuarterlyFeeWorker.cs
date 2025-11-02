@@ -1,105 +1,135 @@
 using MetalSavingsManager.Data;
 using MetalSavingsManager.Data.Model;
 using MetalSavingsManager.Services.Interfaces;
+using MetalSavingsManager.Utils;
 using Microsoft.EntityFrameworkCore;
 
-namespace MetalSavingsManager.Services
+namespace MetalSavingsManager.Services;
+
+public class QuarterlyFeeWorker : BackgroundService
 {
-    public class QuarterlyFeeWorker : BackgroundService
+    private readonly IServiceProvider _provider;
+
+    public QuarterlyFeeWorker(IServiceProvider provider)
     {
-        private readonly IServiceProvider _provider;
+        _provider = provider;
+    }
 
-        public QuarterlyFeeWorker(IServiceProvider provider)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
         {
-            _provider = provider;
-        }
+            var today = DateTime.UtcNow.Date;
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            while (!stoppingToken.IsCancellationRequested)
+            if (IsQuarterEnd(today))
             {
-                var today = DateTime.UtcNow.Date;
+                using var scope = _provider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<BankingDbContext>();
+                var metalPriceService = scope.ServiceProvider.GetRequiredService<IMetalPriceService>();
 
-                // Only run on quarter end
-                if (IsQuarterEnd(today))
+                var activePlans = await db.SavingsPlans
+                    .Where(p => p.IsActive)
+                    .Include(p => p.Deposits)
+                    .Include(p => p.QuarterlyFees)
+                    .ToListAsync(stoppingToken);
+
+                foreach (var plan in activePlans)
                 {
-                    using var scope = _provider.CreateScope();
-                    var feeService = scope.ServiceProvider.GetRequiredService<IQuarterlyFeeService>();
-                    var db = scope.ServiceProvider.GetRequiredService<BankingDbContext>();
+                    var quarterEndDate = GetQuarterEndDate(today);
 
-                    var activePlans = await db.SavingsPlans.Where(p => p.IsActive).ToListAsync(stoppingToken);
+                    bool feeExists = await db.QuarterlyFees
+                        .AnyAsync(qf => qf.SavingsPlanId == plan.Id && qf.FeeDate == quarterEndDate, stoppingToken);
 
-                    foreach (var plan in activePlans)
+                    if (!feeExists)
                     {
-                        var quarterEndDate = GetQuarterEndDate(today);
-                        var metalPriceService = scope.ServiceProvider.GetRequiredService<IMetalPriceService>();
-                        decimal metalPrice = await metalPriceService.GetLatestPriceInEuroAsync(plan.PlanType.ToString());
-
-                        await InsertQuarterlyFee(plan, quarterEndDate, metalPrice, db, CancellationToken.None);
+                        await CalculateAndInsertQuarterlyFee(plan, quarterEndDate, metalPriceService, db, stoppingToken);
                     }
                 }
-
-                // Wait 24 hours before next check
-                try
-                {
-                    await Task.Delay(TimeSpan.FromDays(1), stoppingToken);
-                }
-                catch (TaskCanceledException)
-                {
-                    // ignore cancellation
-                }
             }
-        }
 
-        private async Task InsertQuarterlyFee(SavingsPlan plan, DateTime quarterEndDate, decimal metalPrice, BankingDbContext dbContext, CancellationToken cancellationToken)
-        {
-            var depositAmounts = await dbContext.Deposits
-                .Where(d => d.SavingsPlanId == plan.Id && d.DepositDate <= quarterEndDate)
-                .Select(d => d.Amount)
-                .ToListAsync(cancellationToken);
-
-            decimal totalDeposits = depositAmounts.Sum();
-            decimal metalUnits = totalDeposits / metalPrice;
-            decimal portfolioValue = metalUnits * metalPrice;
-            decimal feeAmount = portfolioValue * 0.005m;
-
-            bool feeExists = await dbContext.QuarterlyFees
-                .AnyAsync(qf => qf.SavingsPlanId == plan.Id && qf.FeeDate == quarterEndDate, cancellationToken);
-
-            if (!feeExists)
+            try
             {
-                var fee = new QuarterlyFee
-                {
-                    Id = Guid.NewGuid(),
-                    SavingsPlanId = plan.Id,
-                    FeeAmount = feeAmount,
-                    FeeDate = quarterEndDate
-                };
-                dbContext.QuarterlyFees.Add(fee);
-
-                var feeTransaction = new Transaction
-                {
-                    Id = Guid.NewGuid(),
-                    SavingsPlanId = plan.Id,
-                    TransactionType = "Fee",
-                    TransactionDate = quarterEndDate,
-                    Amount = -feeAmount
-                };
-                dbContext.Transactions.Add(feeTransaction);
-
-                await dbContext.SaveChangesAsync(cancellationToken);
+                await Task.Delay(TimeSpan.FromDays(1), stoppingToken);
+            }
+            catch (TaskCanceledException)
+            {
+                break;
             }
         }
+    }
 
-        private bool IsQuarterEnd(DateTime date)
+    private async Task CalculateAndInsertQuarterlyFee(
+        SavingsPlan plan,
+        DateTime quarterEndDate,
+        IMetalPriceService metalPriceService,
+        BankingDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var metalType = plan.PlanType == PlanType.Gold ? Constants.Gold : Constants.Silver;
+
+        var deposits = plan.Deposits
+            .Where(d => d.DepositDate <= quarterEndDate)
+            .OrderBy(d => d.DepositDate)
+            .ToList();
+
+        var previousFees = plan.QuarterlyFees
+            .Where(f => f.FeeDate < quarterEndDate)
+            .OrderBy(f => f.FeeDate)
+            .ToList();
+
+        decimal currentMetalUnits = 0m;
+
+        foreach (var deposit in deposits)
         {
-            return date == GetQuarterEndDate(date);
+            var priceAtDeposit = await metalPriceService.GetHistoricalPriceInEuroAsync(metalType, deposit.DepositDate);
+            decimal unitsPurchased = deposit.Amount / priceAtDeposit;
+            currentMetalUnits += unitsPurchased;
         }
 
-        private DateTime GetQuarterEndDate(DateTime date)
+        foreach (var fee in previousFees)
         {
-            int quarterMonth = ((date.Month - 1) / 3 + 1) * 3;
-            return new DateTime(date.Year, quarterMonth, DateTime.DaysInMonth(date.Year, quarterMonth));
+            var priceAtFee = await metalPriceService.GetHistoricalPriceInEuroAsync(metalType, fee.FeeDate);
+            decimal unitsDeducted = fee.FeeAmount / priceAtFee;
+            currentMetalUnits -= unitsDeducted;
         }
+
+        var priceAtQuarterEnd = await metalPriceService.GetHistoricalPriceInEuroAsync(metalType, quarterEndDate);
+        decimal portfolioValue = currentMetalUnits * priceAtQuarterEnd;
+        decimal feeAmount = portfolioValue * 0.005m;
+
+        if (feeAmount > 0)
+        {
+            var fee = new QuarterlyFee
+            {
+                Id = Guid.NewGuid(),
+                SavingsPlanId = plan.Id,
+                FeeAmount = Math.Round(feeAmount, 2),
+                FeeDate = quarterEndDate
+            };
+            db.QuarterlyFees.Add(fee);
+
+            var feeTransaction = new Transaction
+            {
+                Id = Guid.NewGuid(),
+                SavingsPlanId = plan.Id,
+                TransactionType = Constants.Fee,
+                TransactionDate = quarterEndDate,
+                Amount = Math.Round(feeAmount, 2)
+            };
+            db.Transactions.Add(feeTransaction);
+
+            await db.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    private bool IsQuarterEnd(DateTime date)
+    {
+        return date == GetQuarterEndDate(date);
+    }
+
+    private DateTime GetQuarterEndDate(DateTime date)
+    {
+        int quarterMonth = ((date.Month - 1) / 3 + 1) * 3;
+        return new DateTime(date.Year, quarterMonth, DateTime.DaysInMonth(date.Year, quarterMonth));
     }
 }

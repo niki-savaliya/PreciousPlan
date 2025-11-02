@@ -1,8 +1,7 @@
-// src/app/components/historical-chart/historical-chart.component.ts
 import { ChangeDetectorRef, Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
-import { ExchangeRateService } from '../../services/exchange-rate';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpHeaders } from '@angular/common/http';
 import { ChartModule } from 'primeng/chart';
 import { TableModule } from 'primeng/table';
 import { CardModule } from 'primeng/card';
@@ -11,20 +10,26 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
-interface SimulationResult {
+import { SavingsPlanService } from '../../services/savings-plan';
+
+interface SimulationKpi {
+  totalDeposits: number;
+  portfolioValue: number;
+  profitLoss: number;
+  returnRatePercent: number;
   years: string[];
   cumulativeDeposits: number[];
   portfolioValues: number[];
-  profitLoss: number[];
+  profitLossHistory: number[];
 }
 
 @Component({
   selector: 'app-historical-chart',
+  standalone: true,
   imports: [CommonModule, FormsModule, ChartModule, TableModule, CardModule, ButtonModule, InputTextModule, SelectModule, TooltipModule],
   templateUrl: './historical-chart.component.html'
 })
 export class HistoricalChartComponent implements OnInit {
-  // Latest chart
   latestChartData: any;
   latestChartOptions = {
     responsive: true,
@@ -34,14 +39,7 @@ export class HistoricalChartComponent implements OnInit {
         type: 'linear',
         display: true,
         position: 'left',
-        title: { display: true, text: 'Price Metal 1 (EUR)' }
-      },
-      y1: {
-        type: 'linear',
-        display: true,
-        position: 'right',
-        grid: { drawOnChartArea: false },
-        title: { display: true, text: 'Price Metal 2 (EUR)' }
+        title: { display: true, text: 'Price (EUR)' }
       }
     },
     plugins: {
@@ -49,7 +47,7 @@ export class HistoricalChartComponent implements OnInit {
       tooltip: { enabled: true }
     }
   };
-  // Simulation charts
+
   simulationData: any = {
     deposits: null,
     portfolio: null,
@@ -60,230 +58,246 @@ export class HistoricalChartComponent implements OnInit {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
-      x: { title: { display: true, text: 'Time (Years)' } },
-      y: { title: { display: true, text: 'Value (EUR)' } }
+      x: { title: { display: true, text: 'Years' } },
+      y: { title: { display: true, text: 'EUR' } }
     },
     plugins: {
       legend: { display: true, position: 'top' as const }
     }
   };
 
-  // Form data
-  latestSymbol = 'XAU'; // Gold
   availableMetals = [
     { code: 'XAU', name: 'Gold (1 oz)' },
-    { code: 'XAG', name: 'Silver (1 oz)' }
+    { code: 'XAG', name: 'Silver (1000g)' }
   ];
 
-  // Simulation parameters
   selectedMetal = 'XAU';
   monthlySavings = 100;
+  maxDate: string = new Date().toISOString().split('T')[0];
+  startDate: string = '2023-01-01';
+  endDate: string = this.maxDate;
 
-  maxDate: string = new Date().toISOString().split('T')[0]; // Today in 'YYYY-MM-DD'
+  simulationKpi: SimulationKpi | null = null;
+  isLoading = false;
+  isPriceLoading = false;
+  errorMessage = '';
 
-  startDate: string = '2020-01-01';  // Default or bind from form
-  endDate: string = this.maxDate; // Default endDate to today
-
-  constructor(private rates: ExchangeRateService, @Inject(PLATFORM_ID) private platformId: object, private cdRef: ChangeDetectorRef) { }
+  constructor(
+    private savingsPlanService: SavingsPlanService,
+    @Inject(PLATFORM_ID) private platformId: object,
+    private cdRef: ChangeDetectorRef
+  ) { }
 
   ngOnInit() {
     if (isPlatformBrowser(this.platformId)) {
-      this.fetchLatest();
+      this.fetchLatestPrices();
       this.runSimulation();
     }
   }
 
-  fetchLatest() {
-    // Fetch two metals prices (e.g., Gold XAU and Silver XAG)
-    this.rates.getLatest('USD', 'XAU').subscribe(resp1 => {
-      const val1 = resp1.rates['XAU'];
-      const priceMetal1 = 1 / val1; // Convert USD to EUR approx
+  fetchLatestPrices() {
+    this.isPriceLoading = true;
+    const headers = this.getAuthHeaders();
 
-      this.rates.getLatest('USD', 'XAG').subscribe(resp2 => {
-        const val2 = resp2.rates['XAG'];
-        const priceMetal2 = 1 / val2; // Convert USD to EUR approx
-
-        this.latestChartData = {
-          labels: [this.getMetalName('XAU'), this.getMetalName('XAG')],
-          datasets: [
-            {
-              label: `Gold Price (EUR)`,
-              data: [priceMetal1, null], // Data aligned to first label
-              backgroundColor: '#42A5F5',
-              yAxisID: 'y'
-            },
-            {
-              label: `Silver Price (EUR)`,
-              data: [null, priceMetal2], // Data aligned to second label
-              type: 'line',
-              borderColor: '#FFA726',
-              fill: false,
-              yAxisID: 'y1'
-            }
-          ]
-        };
-        this.cdRef.detectChanges();
-      });
+    // Fetch Gold Price
+    this.savingsPlanService.getLatestPrice('XAU', headers).subscribe({
+      next: (goldPrice: number) => {
+        // Fetch Silver Price
+        this.savingsPlanService.getLatestPrice('XAG', headers).subscribe({
+          next: (silverPrice: number) => {
+            this.latestChartData = {
+              labels: ['Gold (1 oz)', 'Silver (1000g)'],
+              datasets: [
+                {
+                  label: 'Current Price (EUR)',
+                  data: [goldPrice, silverPrice],
+                  backgroundColor: ['#FFD700', '#C0C0C0'],
+                  borderColor: ['#DAA520', '#A8A8A8'],
+                  borderWidth: 2
+                }
+              ]
+            };
+            this.isPriceLoading = false;
+            this.cdRef.detectChanges();
+          },
+          error: (err) => {
+            console.error('Error fetching silver price:', err);
+            this.isPriceLoading = false;
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error fetching gold price:', err);
+        this.isPriceLoading = false;
+      }
     });
   }
 
   async runSimulation() {
-    if (new Date(this.endDate) > new Date()) {
-      alert('End date cannot be in the future.');
+
+    const today = new Date();
+    // Truncate 'today' to the 15th of current month if today is after day 15, else keep 15th of previous month to avoid requesting future prices
+    let adjustedToday = new Date(today.getFullYear(), today.getMonth(), 15);
+    if (today.getDate() < 15) {
+      // if today before 15th, use 15th of previous month
+      adjustedToday = new Date(today.getFullYear(), today.getMonth() - 1, 15);
+    }
+
+    let endDate = new Date(this.endDate);
+
+    // Validation
+    if (endDate > adjustedToday) {
+      endDate = adjustedToday;
+    }
+
+    if (new Date(this.startDate) >= endDate) {
+      alert('Start date must be before end date.');
       return;
     }
-    if (new Date(this.startDate) > new Date(this.endDate)) {
-      alert('Start date cannot be after end date.');
+
+    if (this.monthlySavings <= 0) {
+      alert('Monthly savings must be greater than zero.');
       return;
     }
 
-    const historicalData = await this.rates.getHistoricalRange(
-      this.startDate,
-      this.endDate,
-      this.selectedMetal
-    );
-    this.cdRef.detectChanges();
-    const simulation = this.calculateSavingsPlan(historicalData);
-    this.createSimulationCharts(simulation);
-  }
+    this.isLoading = true;
+    this.errorMessage = '';
 
-  getTotalDeposits(): string {
-    if (!this.startDate || !this.endDate) return '0';
-
-    const startYear = new Date(this.startDate).getFullYear();
-    const endYear = new Date(this.endDate).getFullYear();
-
-    const years = endYear - startYear + 1;
-
-    // Guard against negative or zero years
-    if (years <= 0) return '0';
-
-    const total = this.monthlySavings * 12 * years;
-    return total.toLocaleString();
-  }
-
-  calculateSavingsPlan(historicalData: any[]): SimulationResult {
-    const years: string[] = [];
-    const cumulativeDeposits: number[] = [];
-    const portfolioValues: number[] = [];
-    const profitLoss: number[] = [];
-
-    let totalDeposited = 0;
-    let totalUnits = 0;
-
-    // Extract years from startDate and endDate for calculations
-    const startYear = new Date(this.startDate).getFullYear();
-
-    historicalData.forEach((data, index) => {
-      const year = startYear + index;
-      const metalPrice = data.rates[this.selectedMetal];
-      const priceInEur = 1 / metalPrice; // Approximate EUR price
-
-      const annualDeposit = this.monthlySavings * 12;
-      totalDeposited += annualDeposit;
-
-      const unitsPurchased = annualDeposit / priceInEur;
-      totalUnits += unitsPurchased;
-
-      const portfolioValue = totalUnits * priceInEur;
-      const profit = portfolioValue - totalDeposited;
-
-      years.push(year.toString());
-      cumulativeDeposits.push(totalDeposited);
-      portfolioValues.push(portfolioValue);
-      profitLoss.push(profit);
-    });
-    this.cdRef.detectChanges();
-
-    return { years, cumulativeDeposits, portfolioValues, profitLoss };
-  }
-
-  createSimulationCharts(simulation: SimulationResult) {
-    // Chart 1: Cumulative Deposits (Sparbeträge)
-    this.simulationData.deposits = {
-      labels: simulation.years,
-      datasets: [{
-        label: 'Cumulative Deposits (EUR)',
-        data: simulation.cumulativeDeposits,
-        borderColor: '#4CAF50',
-        backgroundColor: 'rgba(76, 175, 80, 0.1)',
-        fill: true
-      }]
+    // Prepare request payload
+    const simulationRequest = {
+      planType: this.selectedMetal,
+      monthlyAmount: this.monthlySavings,
+      startDate: this.formatDate(this.startDate),
+      endDate: this.formatDate(endDate.toISOString().substring(0, 10))
     };
 
-    // Chart 2: Portfolio Value (Wertentwicklung)
-    this.simulationData.portfolio = {
-      labels: simulation.years,
+    const headers = this.getAuthHeaders();
+    console.log('Simulation Request:', simulationRequest);
+    console.log('Headers:', headers);
+    this.savingsPlanService.getsimulations(simulationRequest, headers).subscribe({
+      next: (response: SimulationKpi) => {
+        this.simulationKpi = response;
+        this.createSimulationCharts(response);
+        this.isLoading = false;
+        this.cdRef.detectChanges();
+      },
+      error: (error) => {
+        console.error('Simulation error:', error);
+        this.errorMessage = error.error?.message || 'Failed to run simulation. Please try again.';
+        this.isLoading = false;
+        this.cdRef.detectChanges();
+      }
+    });
+  }
+
+  createSimulationCharts(kpi: SimulationKpi) {
+    // Cumulative Deposits Chart
+    this.simulationData.deposits = {
+      labels: kpi.years,
       datasets: [
         {
-          label: 'Deposits (EUR)',
-          data: simulation.cumulativeDeposits,
+          label: 'Cumulative Deposits (EUR)',
+          data: kpi.cumulativeDeposits,
           borderColor: '#4CAF50',
-          backgroundColor: 'transparent',
-          fill: false
-        },
-        {
-          label: 'Portfolio Value (EUR)',
-          data: simulation.portfolioValues,
-          borderColor: '#FF9800',
-          backgroundColor: 'rgba(255, 152, 0, 0.1)',
-          fill: true
+          backgroundColor: 'rgba(76, 175, 80, 0.1)',
+          fill: true,
+          tension: 0.4
         }
       ]
     };
 
-    // Chart 3: Profit/Loss (Ertrag-/Verlustkurve)
-    this.simulationData.profitLoss = {
-      labels: simulation.years,
-      datasets: [{
-        label: 'Profit/Loss (EUR)',
-        data: simulation.profitLoss,
-        borderColor: '#2196F3',
-        backgroundColor: 'rgba(33, 150, 243, 0.3)', // Fixed static color
-        fill: true
-      }]
+    // Portfolio Value vs Deposits Chart
+    this.simulationData.portfolio = {
+      labels: kpi.years,
+      datasets: [
+        {
+          label: 'Deposits (EUR)',
+          data: kpi.cumulativeDeposits,
+          borderColor: '#4CAF50',
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: 0.4
+        },
+        {
+          label: 'Portfolio Value (EUR)',
+          data: kpi.portfolioValues,
+          borderColor: '#FF9800',
+          backgroundColor: 'rgba(255, 152, 0, 0.1)',
+          fill: true,
+          tension: 0.4
+        }
+      ]
     };
 
-    this.cdRef.detectChanges();
+    // Profit/Loss Chart
+    this.simulationData.profitLoss = {
+      labels: kpi.years,
+      datasets: [
+        {
+          label: 'Profit/Loss (EUR)',
+          data: kpi.profitLossHistory,
+          borderColor: '#2196F3',
+          backgroundColor: 'rgba(33, 150, 243, 0.3)',
+          fill: true,
+          tension: 0.4
+        }
+      ]
+    };
   }
 
-  getMetalName(code: string): string {
-    const metal = this.availableMetals.find(m => m.code === code);
-    return metal ? metal.name : code;
+  getTotalDeposits(): string {
+    return this.simulationKpi
+      ? this.simulationKpi.totalDeposits.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : '0.00';
+  }
+
+  getLatestPortfolioValue(): string {
+    return this.simulationKpi
+      ? this.simulationKpi.portfolioValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : '0.00';
+  }
+
+  getLatestProfit(): string {
+    if (!this.simulationKpi) return '0.00';
+    const value = this.simulationKpi.profitLoss;
+    const formatted = Math.abs(value).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return value >= 0 ? formatted : `-${formatted}`;
+  }
+
+  getLatestProfitValue(): number {
+    return this.simulationKpi ? this.simulationKpi.profitLoss : 0;
+  }
+
+  getReturnPercentage(): string {
+    return this.simulationKpi
+      ? this.simulationKpi.returnRatePercent.toFixed(2)
+      : '0.00';
+  }
+
+  getReturnPercentageValue(): number {
+    return this.simulationKpi ? this.simulationKpi.returnRatePercent : 0;
+  }
+
+  formatDate(dateString: string): string {
+    // Convert 'YYYY-MM-DD' to 'YYYY-MM-15T00:00:00Z' (15th of month)
+    const date = new Date(dateString);
+    date.setDate(15);
+    return date.toISOString();
+  }
+
+  getAuthHeaders(): HttpHeaders {
+    const token = this.getAuthToken();
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+  }
+
+  getAuthToken(): string {
+    return localStorage.getItem('jwt_token') || '';
   }
 
   onSimulationUpdate() {
     this.runSimulation();
-  }
-
-  getLatestPortfolioValue(): string {
-    if (!this.simulationData.portfolio?.datasets?.[1]?.data) return '0';
-    const data = this.simulationData.portfolio.datasets[1].data;
-    return data[data.length - 1]?.toLocaleString() || '0';
-  }
-
-  getLatestProfit(): string {
-    const profitValue = this.getLatestProfitValue();
-    return profitValue.toLocaleString();
-  }
-
-  getLatestProfitValue(): number {
-    if (!this.simulationData.profitLoss?.datasets?.[0]?.data) return 0;
-    const data = this.simulationData.profitLoss.datasets[0].data;
-    return data[data.length - 1] || 0;
-  }
-
-  getReturnPercentage(): string {
-    const returnValue = this.getReturnPercentageValue();
-    return returnValue.toFixed(2);
-  }
-
-  getReturnPercentageValue(): number {
-    const totalDeposits = this.monthlySavings * 12 * (new Date(this.endDate).getFullYear() - new Date(this.startDate).getFullYear() + 1);
-    if (!this.simulationData.profitLoss?.datasets?.[0]?.data || totalDeposits === 0) return 0;
-
-    const data = this.simulationData.profitLoss.datasets[0].data;
-    const latestProfit = data[data.length - 1] || 0;
-    return (latestProfit / totalDeposits) * 100;
   }
 }

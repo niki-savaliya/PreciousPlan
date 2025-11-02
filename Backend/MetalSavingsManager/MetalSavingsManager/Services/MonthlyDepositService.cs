@@ -1,5 +1,6 @@
 ﻿using MetalSavingsManager.Data;
 using MetalSavingsManager.Data.Model;
+using MetalSavingsManager.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace MetalSavingsManager.Services;
@@ -56,7 +57,7 @@ public class MonthlyDepositService : BackgroundService
                             {
                                 Id = Guid.NewGuid(),
                                 SavingsPlanId = plan.Id,
-                                TransactionType = "Deposit",
+                                TransactionType = Constants.Deposit,
                                 TransactionDate = today,
                                 Amount = plan.MonthlyAmount
                             };

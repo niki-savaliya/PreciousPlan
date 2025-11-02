@@ -5,5 +5,4 @@ namespace MetalSavingsManager.Services.Interfaces;
 public interface IDepositService
 {
     Task<List<Deposit>> GetDepositsForPlanAsync(Guid planId);
-    Task AutoGenerateMonthlyDepositsAsync();
 }

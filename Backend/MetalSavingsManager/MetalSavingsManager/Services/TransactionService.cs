@@ -1,6 +1,7 @@
 ﻿using MetalSavingsManager.Data;
 using MetalSavingsManager.Data.Model;
 using MetalSavingsManager.Services.Interfaces;
+using MetalSavingsManager.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace MetalSavingsManager.Services;
@@ -38,21 +39,31 @@ public class TransactionService : ITransactionService
         if (!plan.IsActive)
             throw new InvalidOperationException("Savings plan already ended.");
 
-        decimal metalPrice = plan.PlanType switch
+        var metalType = plan.PlanType == PlanType.Gold ? Constants.Gold : Constants.Silver;
+        var currentPrice = await _metalPriceService.GetLatestPriceInEuroAsync(metalType);
+
+        var deposits = plan.Deposits.OrderBy(d => d.DepositDate).ToList();
+        var fees = plan.QuarterlyFees.OrderBy(f => f.FeeDate).ToList();
+
+        decimal currentMetalUnits = 0m;
+
+        foreach (var deposit in deposits)
         {
-            PlanType.Gold => await _metalPriceService.GetLatestPriceInEuroAsync("XAU"),
-            PlanType.Silver => await _metalPriceService.GetLatestPriceInEuroAsync("XAG"),
-            _ => throw new ArgumentException("Unsupported plan type")
-        };
+            var priceAtDeposit = await _metalPriceService.GetHistoricalPriceInEuroAsync(metalType, deposit.DepositDate);
+            decimal unitsPurchased = deposit.Amount / priceAtDeposit;
+            currentMetalUnits += unitsPurchased;
+        }
 
-        decimal totalDeposits = plan.Deposits?.Sum(d => d.Amount) ?? 0;
-        decimal totalFees = plan.QuarterlyFees?.Sum(f => f.FeeAmount) ?? 0;
+        foreach (var fee in fees)
+        {
+            var priceAtFee = await _metalPriceService.GetHistoricalPriceInEuroAsync(metalType, fee.FeeDate);
+            decimal unitsDeducted = fee.FeeAmount / priceAtFee;
+            currentMetalUnits -= unitsDeducted;
+        }
 
-        decimal metalUnits = totalDeposits / metalPrice;
-        decimal payoutAmount = (metalUnits * metalPrice) - totalFees;
+        decimal payoutAmount = currentMetalUnits * currentPrice;
         if (payoutAmount < 0) payoutAmount = 0;
 
-        // Mark plan as ended
         plan.EndDate = DateTime.UtcNow;
         plan.IsActive = false;
 
@@ -60,7 +71,7 @@ public class TransactionService : ITransactionService
         {
             Id = Guid.NewGuid(),
             SavingsPlanId = planId,
-            TransactionType = "Payout",
+            TransactionType = Constants.Payout,
             Amount = Math.Round(payoutAmount, 2),
             TransactionDate = DateTime.UtcNow
         };

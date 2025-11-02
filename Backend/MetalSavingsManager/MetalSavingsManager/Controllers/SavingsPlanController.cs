@@ -12,10 +12,12 @@ namespace MetalSavingsManager.Controllers;
 public class SavingsPlanController : ControllerBase
 {
     private readonly ISavingsPlanService _savingsPlanService;
+    private readonly IMetalPriceService _metalPriceService;
 
-    public SavingsPlanController(ISavingsPlanService savingsPlanService)
+    public SavingsPlanController(ISavingsPlanService savingsPlanService, IMetalPriceService metalPriceService)
     {
         _savingsPlanService = savingsPlanService;
+        _metalPriceService = metalPriceService;
     }
 
     [HttpPost("create")]
@@ -108,6 +110,42 @@ public class SavingsPlanController : ControllerBase
         catch (Exception ex)
         {
             return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("simulate")]
+    public async Task<IActionResult> SimulateSavingsPlan([FromBody] SimulationRequest request)
+    {
+        try
+        {
+            var simulationResult = await _metalPriceService.SimulatePlanAsync(
+                request.PlanType, request.MonthlyAmount, request.StartDate, request.EndDate);
+            return Ok(simulationResult);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet("latest-price/{metalType}")]
+    public async Task<IActionResult> GetLatestPrice(string metalType)
+    {
+        try
+        {
+            // Validate metal type
+            if (metalType != "XAU" && metalType != "XAG")
+            {
+                return BadRequest("Invalid metal type. Use 'XAU' for gold or 'XAG' for silver.");
+            }
+
+            var priceEur = await _metalPriceService.GetLatestPriceInEuroAsync(metalType);
+
+            return Ok(priceEur);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 }

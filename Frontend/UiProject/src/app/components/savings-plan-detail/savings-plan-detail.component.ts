@@ -13,7 +13,7 @@ import { DepositService } from '../../services/deposit';
 
 interface SavingsPlan {
   id: string;
-  planType: string;
+  planType: number;
   monthlyAmount: number;
   startDate: string;
   endDate: string | null;

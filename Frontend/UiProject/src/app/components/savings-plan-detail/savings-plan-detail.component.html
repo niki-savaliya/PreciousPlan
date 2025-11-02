@@ -12,7 +12,7 @@
       <div *ngIf="plan; else loadingBlock" class="plan-summary-cards">
         <p-card class="plan-summary-card bg-blue">
           <div class="label">Plan Type</div>
-          <div class="value">{{ plan.planType === "1" ? "Goldbarren 1 Feinunze" : "Silberbarren 1.000 Gramm" }}</div>
+          <div class="value">{{ plan.planType === 1 ? 'Goldbarren 1 Feinunze' : plan.planType === 2 ? 'Silberbarren 1.000 Gramm' : '' }}</div>
         </p-card>
 
         <p-card class="plan-summary-card bg-green">
