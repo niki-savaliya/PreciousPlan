@@ -11,7 +11,6 @@ PreciousPlan is an intuitive web application for managing and simulating gold an
 2. **Set your OpenExchangeRate APP_ID:**
 
 - Replace the APP_ID in `Backend/MetalSavingsManager/MetalSavingsManager/Utils/Constants.cs`
-- Replace the APP_ID in `Frontend/UiProject/src/app/services/exchange-rate.ts`
 
 3. **Run the application using Docker Compose:**
 
