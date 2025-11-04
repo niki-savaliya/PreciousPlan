@@ -15,6 +15,7 @@ PreciousPlan is an intuitive web application for managing and simulating gold an
 3. **Run the application using Docker Compose:**
 
 Navigate to the directory where your `docker-compose.yml` is located and run:
+`docker compose up --build`
 
 4. **Open the frontend in your browser:**
 
